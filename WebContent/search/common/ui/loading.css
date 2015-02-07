@@ -1,0 +1,10 @@
+/**/
+#loading {}
+#prograss-bar.cover_box {position:absolute;width:100%; height:100% !important; z-index:100000; top:0; left:0; display:none}
+.full_bg { background:#000;position:fixed;width:100%; height:100%; left:0; top:0;opacity:0.4;filter:alpha(opacity=40)}
+#loading .full_bg { background-image:none !important}
+.tran .full_bg { background:none }
+.loading_img_bg { position:absolute; z-index:2; top:150px; width:400px; height:300px; left:50% ; margin-left:-200px}
+.loading_img { width:54px; height:55px; background:url(img/loading.gif) #fff; border:15px solid #FFF; position:absolute; left:157px; top:160px; border-radius:15px}
+.loading_img span { display:none}
+/**/
