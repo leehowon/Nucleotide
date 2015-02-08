@@ -1,25 +1,79 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
+        import="java.io.IOException
+                , java.util.ArrayList
+                , java.util.Iterator
+                , java.util.List
+                , org.apache.http.HttpResponse
+                , org.apache.http.NameValuePair
+                , org.apache.http.client.ClientProtocolException
+                , org.apache.http.client.HttpClient
+                , org.apache.http.client.HttpResponseException
+                , org.apache.http.client.entity.UrlEncodedFormEntity
+                , org.apache.http.client.methods.HttpPost
+                , org.apache.http.impl.client.BasicResponseHandler
+                , org.apache.http.impl.client.HttpClientBuilder
+                , org.apache.http.message.BasicNameValuePair
+                , org.jsoup.Jsoup
+                , org.jsoup.nodes.Document
+                , org.jsoup.nodes.Element
+                , org.jsoup.select.Elements" %>
 <%@ include file="commonResult.jsp" %>
 <%
+HttpClient httpClient = HttpClientBuilder.create().build();
+List< NameValuePair > params = new ArrayList< NameValuePair >();
+
+params.add( new BasicNameValuePair("CMD", "Put") );
+params.add( new BasicNameValuePair("DATABASE", "nr") );
+params.add( new BasicNameValuePair("PROGRAM", "blastn") );
+params.add( new BasicNameValuePair("QUERY", query) ); //"AGACGCCGCCGCCACCACCGCCACCGCCGC"
+
+HttpPost post = new HttpPost( url );
+String rid = "";
+
+post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
+post.setHeader( "Pragma", "no-cache" );
+post.setHeader( "Expires", "0" );
+post.setEntity( new UrlEncodedFormEntity(params) );
+
+try
+{
+    rid = httpClient.execute(post, new BasicResponseHandler() 
+    {
+        @Override
+        public String handleResponse(HttpResponse response)
+                throws HttpResponseException, IOException
+        {
+            Document doc = Jsoup.parse( super.handleResponse(response) );
+            Element element = doc.getElementById( "rid" );
+            
+            return element != null ? element.val() : "";
+        }
+    });
+}
+catch ( IOException e )
+{
+    e.printStackTrace();
+}
+
+params = new ArrayList< NameValuePair >();
+params.add( new BasicNameValuePair("CMD", "Get") );
+params.add( new BasicNameValuePair("db", "nucleotide") );
+params.add( new BasicNameValuePair("DATABASE", "nr") );
+params.add( new BasicNameValuePair("PROGRAM", "blastn") );
+params.add( new BasicNameValuePair("RID", rid) );
+params.add( new BasicNameValuePair("SHOW_OVERVIEW", "no") );
+params.add( new BasicNameValuePair("DESCRIPTIONS", "100") );
+
+post = new HttpPost( url );
+post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
+post.setHeader( "Pragma", "no-cache" );
+post.setHeader( "Expires", "0" );
+post.setEntity( new UrlEncodedFormEntity(params) );
+
 String data = "", status = "";
 
 try
 {
-    params = new ArrayList<NameValuePair>();
-    params.add( new BasicNameValuePair("CMD", "Get") );
-    params.add( new BasicNameValuePair("db", "nucleotide") );
-    params.add( new BasicNameValuePair("DATABASE", "nr") );
-    params.add( new BasicNameValuePair("PROGRAM", "blastn") );
-    params.add( new BasicNameValuePair("RID", rid) );
-    params.add( new BasicNameValuePair("SHOW_OVERVIEW", "no") );
-    params.add( new BasicNameValuePair("DESCRIPTIONS", "100") );
-    
-    post = new HttpPost( url );
-    post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
-    post.setHeader( "Pragma", "no-cache" );
-    post.setHeader( "Expires", "0" );
-    post.setEntity( new UrlEncodedFormEntity(params) );
-    
     do
     {
         data = httpClient.execute(post, new BasicResponseHandler() 
@@ -77,7 +131,6 @@ catch ( IOException e )
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- 결과는 페이징 없이 Max 100 표시 -->
 <%
 Document doc = Jsoup.parse( data );
 Elements rows = doc.select( "#dscTable tbody tr" );
@@ -106,6 +159,14 @@ if( rows != null && rows.size() > 0 )
 <%
         ++rowNum;
     }
+}
+else
+{
+%>
+                    <tr>
+                        <td colspan="9">검색 결과가 없습니다.</td>
+                    </tr>
+<%
 }
 %>
                 </tbody>
