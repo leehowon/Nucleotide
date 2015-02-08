@@ -1,3 +1,4 @@
+<%@page import="com.oreilly.servlet.multipart.DefaultFileRenamePolicy"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
         import="com.oreilly.servlet.*
                 , com.oreilly.servlet.multipart.DefaultFileRenamePolicy
