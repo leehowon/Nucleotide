@@ -77,7 +77,6 @@ catch ( IOException e )
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- 결과는 페이징 없이 Max 100 표시 -->
 <%
 Document doc = Jsoup.parse( data );
 Elements rows = doc.select( "#dscTable tbody tr" );
@@ -106,6 +105,14 @@ if( rows != null && rows.size() > 0 )
 <%
         ++rowNum;
     }
+}
+else
+{
+%>
+                    <tr>
+                        <td colspan="9">검색 결과가 없습니다.</td>
+                    </tr>
+<%
 }
 %>
                 </tbody>

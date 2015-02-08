@@ -1,3 +1,4 @@
+<%@page import="com.oreilly.servlet.multipart.DefaultFileRenamePolicy"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
         import="java.io.IOException
                 , java.util.ArrayList
@@ -16,10 +17,26 @@
                 , org.jsoup.Jsoup
                 , org.jsoup.nodes.Document
                 , org.jsoup.nodes.Element
-                , org.jsoup.select.Elements" %>
+                , org.jsoup.select.Elements
+                , com.oreilly.servlet.*" %>
 <%
+String uploadPath = "211.244.51.163".equals( request.getRemoteAddr() ) ? "/home/user/escteam/webapps/ROOT/upload" : "c:\\upload";
+MultipartRequest mRequest = new MultipartRequest( request, uploadPath
+        , 1024 * 1024 * 10, "UTF-8", new DefaultFileRenamePolicy() );
 String url = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi"
-       , query = "AGACGCCGCCGCCACCACCGCCACCGCCGC";
+       , queryFile = mRequest.getParameter( "queryFile" )
+       , query = mRequest.getParameter( "query" ); //"AGACGCCGCCGCCACCACCGCCACCGCCGC"
+
+if( query == null || "".equals(query) )
+{
+%>
+<html>
+<head><script>alert( "필수 파라미터가 없습니다." );</script></head>
+<body></body>
+</html>
+<%
+    return;
+}
 
 HttpClient httpClient = HttpClientBuilder.create().build();
 List<NameValuePair> params = new ArrayList<NameValuePair>();

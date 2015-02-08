@@ -22,7 +22,8 @@
 String seq = request.getParameter( "seq" )
         , rid = request.getParameter( "rid" );
 
-if( seq == null || "".equals(seq) || rid == null || "".equals(rid) )
+//if( seq == null || "".equals(seq) || rid == null || "".equals(rid) )
+    if( seq == null || "".equals(seq) )
 {
 %>
 <html>
