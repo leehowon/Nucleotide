@@ -19,13 +19,27 @@
                 , org.jsoup.select.Elements" %>
 <%@ include file="commonResult.jsp" %>
 <%
+StringBuffer sb = new StringBuffer( "" );
+String con = "KE"; // AccessionNumber 앞에 붙는 알파뱃
+//int[][] accessionNumbers = { { 261989, 262342 }, { 296598, 296715 } } ; //검색 구간을 넣어준다.
+int[][] accessionNumbers = { { 261989, 261995 }, { 296598, 296600 } } ; //검색 구간을 넣어준다.
+
+for( int li = 0, limit = accessionNumbers.length; li < limit; ++li )
+{
+    int start = accessionNumbers[ li ][ 0 ], end = accessionNumbers[ li ][ 1 ];
+    
+    while( start <= end )
+        sb.append( con ).append( start++ ).append( " " );
+}
+
 HttpClient httpClient = HttpClientBuilder.create().build();
 List< NameValuePair > params = new ArrayList< NameValuePair >();
+String accessionNumber = sb.toString();
 
 params.add( new BasicNameValuePair("CMD", "Put") );
 params.add( new BasicNameValuePair("DATABASE", "nr") );
 params.add( new BasicNameValuePair("PROGRAM", "blastn") );
-params.add( new BasicNameValuePair("QUERY", query) ); //"AGACGCCGCCGCCACCACCGCCACCGCCGC"
+params.add( new BasicNameValuePair("QUERY", accessionNumber + query) ); //"AGACGCCGCCGCCACCACCGCCACCGCCGC"
 
 HttpPost post = new HttpPost( url );
 String rid = "", data = "", status = "";
@@ -172,8 +186,8 @@ if( rows != null && rows.size() > 0 )
                         <td><%= elements.get(5).text() %></td>
                         <td><%= elements.get(6).text() %></td>
                         <td><%= elements.get(7).text() %></td>
-                        <td>GenBank</td>
-                        <td><a href="detail2.jsp?rid=<%= rid %>&seq=<%= seq %>" class="btn_s btn_pe01">View</a></td>
+                        <td><%= accessionNumber.indexOf( elements.get(7).text() ) > -1 ? "CBRUR" : "GenBank" %></td>
+                        <td><a href="detail3.jsp?rid=<%= rid %>&seq=<%= seq %>" class="btn_s btn_pe01">View</a></td>
                     </tr>
 <%
         ++rowNum;

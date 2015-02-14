@@ -20,7 +20,7 @@ table { border-collapse: collapse; }
 input.ex { background: #f9f9f9 !important }
 textarea { overflow: hidden }
 .radio, .checkbox { outline: none !important }
-a { color: #1e1e1e; text-decoration: none; cursor: pointer }
+a { color: #1e1e1e; text-decoration: no`ne; cursor: pointer }
 a:link { color: #333; text-decoration: none; }
 a:hover { color: #F60; text-decoration: none; }
 body { min-width: 1000px }
@@ -28,9 +28,21 @@ body { min-width: 1000px }
 .contents_box dd span { height: 67px; line-height: 67px; display: inline-block; font-weight: bold; color: #1A98FF; font-size: 15px }
 /*header*/
 
-.header { background: #fff; position: relative; margin-bottom: 0px; margin-bottom: 11px;  }
-.header h1 { }
-.header h1 img {vertical-align: middle; }
+.header { background: rgb(238,238,238); /* Old browsers */
+/* IE9 SVG, needs conditional override of 'filter' to 'none' */
+background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2VlZWVlZSIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNjY2NjY2MiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+background: -moz-linear-gradient(top,  rgba(238,238,238,1) 0%, rgba(204,204,204,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(238,238,238,1)), color-stop(100%,rgba(204,204,204,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(238,238,238,1) 0%,rgba(204,204,204,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(238,238,238,1) 0%,rgba(204,204,204,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(238,238,238,1) 0%,rgba(204,204,204,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(238,238,238,1) 0%,rgba(204,204,204,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eeeeee', endColorstr='#cccccc',GradientType=0 ); /* IE6-8 */
+; position: relative; margin-bottom: 0px; margin-bottom: 11px; height:50px ; border-bottom:2px solid #aaa }
+.header h1  { position:relative}
+.header h1 div { font-size:18px !important ; position:absolute; left:170px; top:20px; display:block; width:400px; font-weight:lighter}
+.header h1 img { vertical-align: middle; height:45px; margin-top:3px }
+.admin_user { margin-top:15px}
 .mainbg { height: 450px; width: 100%; margin-top: -11px }
 /*header*/
 
@@ -73,7 +85,7 @@ a.btn_pe02:hover { color: #FFF576; background: #2b313d }
 .header dd a.on { color : #fff; opacity: 1 !important }
 .header dd a.on:link { color : #fff; opacity: 1 !important }
 .header dd a.on:hover { color : #fff; opacity: 1 !important }
-.contents_box { padding: 10px ; width: 975px; margin: auto; border:2px solid #a8b3b9; border-right:6px solid #a8b3b9; border-left:6px solid #a8b3b9; border-radius:5px; background:#f3f5f4 }
+.contents_box { padding: 10px ; margin:10px 20px; border:2px solid #a8b3b9; border-right:6px solid #a8b3b9; border-left:6px solid #a8b3b9; border-radius:5px; background:#f3f5f4 ; height:580px; margin-bottom:60px}
 .content_box { border-radius: 3px; border:1px solid #ddd; padding: 20px 10px 20px 10px; margin:25px 0 30px 0; background: #fff; position: relative; }
 .content_title { border-radius: 3px ;  border: 1px solid #d1d1d1; height: 30px; line-height: 30px; padding:0 15px; font-size: 15px; color: #335e9e; font-weight: bold; background: #ebf1f6; /* Old browsers */
 /* IE9 SVG, needs conditional override of 'filter' to 'none' */
@@ -125,15 +137,13 @@ hr { border: none; margin: 30px 90px 10px 90px; height: 1px; background: #DDDDDD
 .ml12 { margin-left: 12px }
 .btn_box { text-align: center; padding: 0px 0 20px 0 }
 .btn_box .btn_m { min-width: 140px; margin: 0 10px }
-.copyright .copy { position:absolute ; top: 22px;left: 217px;}
-.copyright .sns { right: 20px }
 .clno { clear: none !important }
 .w270 { width: 270px }
 .w170 { width: 170px !important }
 .w640 { width: 640px !important }
 select.w640 { width: 650px !important }
 h4 { font-size: 11px; margin: 0 100px; border: 1px solid #d1d1d1; height: 20px; line-height: 20px; border-radius: 0 0 5px 5px; text-align: center; margin-top: -11px; width: 90px; font-weight: lighter; background: #ededed }
-.copyright { position:relative; height: 80px; background: #9f9b90; padding-top: 5px; border-top:3px solid #0a0c09; margin-top:10px }
+.copyright { position:fixed; bottom:0; width:100%; height: 40px; background: #000; padding:10 px; color:#fff; line-height:40px}
 /*join*/
 
 /*email*/
@@ -250,7 +260,7 @@ dd.fl { z-index: 5; }
 
 /*popup*/
 
-.popup { z-index: 100;  width: 100%; height: 100%; }
+.popup { z-index: 100; position: absolute; position:fixed; width: 100%; height: 100%;  }
 .popup_box { background: #fff; border: 2px solid #AFAFAF; padding: 30px; margin: auto; width: auto; position: relative; margin: auto; box-shadow: 0 0 5px #000; min-height: 200px }
 .popup .title { font-weight: bold; font-size: 20px; line-height:1.2em; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid #00ABFF }
 .popup .content { width: 100%;}
@@ -260,6 +270,7 @@ dd.fl { z-index: 5; }
 
 			.content table { width: 100% ; border:1px solid #ddd; border-bottom:none }
 			.content table td { text-align:center; padding:3px;border-bottom:1px solid #ddd; font-size:12px } 
+			.content table tr.active { background:#DCF3FF}
 			.content table input { vertical-align:middle}
 			.content table thead th { border-bottom:1px solid #ddd; line-height:0.9em; padding:5px ;background: #ebf1f6; /* Old browsers */
 background: -moz-linear-gradient(top,  #ebf1f6 0%, #abd3ee 50%, #89c3eb 51%, #d5ebfb 100%); /* FF3.6+ */
@@ -278,4 +289,12 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ebf1f6', end
 		.popup table th { border:none !important; vertical-align:top ; padding-top:8px; text-align:left !important;}
 
 button { border:none ; font-family: "나눔고딕", ng, "맑은 고딕"}
-.btn_box_add {position:absolute; left:139px; top:-11px}
+body.login .contents_box { width:350px; height:260px;  margin:100px auto; padding:20px}
+body.login .contents_box input.input { background:#fff; padding:10px 5px; width:334px !important; border:1px solid #ddd}
+			.table_box { height:500px; width:75%; position:absolute;  overflow-y:scroll; border:1px solid #999}
+			.table_box table { border:none !important}
+			.edit_box { height:500px; width:24%; position:absolute; right:0;top:0}
+			.edit_box dl dt { text-align:left; height:20px; line-height:20px; font-size:12px}
+			.edit_box dl dd input.input { width:93%; background:#fff; border:1px solid #ddd; margin-top:0; margin-bottom:5px; font-size:12px}
+			
+

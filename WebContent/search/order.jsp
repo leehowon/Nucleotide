@@ -33,8 +33,7 @@ String seq = request.getParameter( "seq" )
 <%
     return;
 }
-//String url = "http://www.ncbi.nlm.nih.gov/nucleotide/" + seq + "?report=genbank&RID=" + rid;
-String url = "http://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?val=" + seq;
+String url = "http://blast.ncbi.nlm.nih.gov/t2g.cgi?CMD=Get&OLD_BLAST=false&DYNAMIC_FORMAT=on&RID=" + rid + "&ALIGN_SEQ_LIST=gi%7C" + seq;
 HttpClient httpClient = HttpClientBuilder.create().build();
 HttpGet get = new HttpGet( url );
 
@@ -70,14 +69,7 @@ catch (Exception e)
 <div class="popup" id="popup" style="display:block;">
     <div class="popup_box">
 <!--         <div class="btn_close" onClick="$('#popup').toggle()">X</div> -->
-        <div class="title"><%= doc.select( "p.title > a" ).get( 0 ).text() %></div>
-        <div class="content">
-            <pre>채집장소 
-채집일 
-채집자 
-채집번호 </pre>
-            <pre><%= doc.select( "pre" ).get( 0 ).text() %></pre>
-        </div>
+        <div class="content"><%= doc.select( "div.oneSeqAln" ).html() %></div>
     </div>
 </div>
 </body>

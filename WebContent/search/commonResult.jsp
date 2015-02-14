@@ -12,7 +12,7 @@ String url = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi"
        , query = mRequest.getParameter( "query" );
 File queryFile = mRequest.getFile( "queryFile" );
 
-if( query == null && "".equals(query) && queryFile == null )
+if( false )
 {
 %>
 <html>
