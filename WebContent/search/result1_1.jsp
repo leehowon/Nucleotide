@@ -1,8 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
         import="java.io.IOException
-                , java.util.ArrayList
-                , java.util.Iterator
-                , java.util.List
+                , java.util.*
                 , org.apache.http.HttpResponse
                 , org.apache.http.NameValuePair
                 , org.apache.http.client.ClientProtocolException
@@ -17,186 +15,311 @@
                 , org.jsoup.nodes.Document
                 , org.jsoup.nodes.Element
                 , org.jsoup.select.Elements" %>
+<%@ include file="/search/openDB.jsp" %>
 <%@ include file="commonResult.jsp" %>
 <%
-StringBuffer sb = new StringBuffer( "" );
-String con = "KE"; // AccessionNumber 앞에 붙는 알파뱃
-//int[][] accessionNumbers = { { 261989, 262342 }, { 296598, 296715 } } ; //검색 구간을 넣어준다.
-int[][] accessionNumbers = { { 261989, 261995 }, { 296598, 296600 } } ; //검색 구간을 넣어준다.
+List< String > params = new ArrayList< String >();
+String url = "http://115.68.22.110/blast/blast.cgi"
+        , sql = "select * from orchid where 1 = 1"
+        , querySql = ""
+        , familyNameKR = mRequest.getParameter( "familyNameKR" ) == null ? "" : mRequest.getParameter( "familyNameKR" ).trim()
+        , familyNameUS = mRequest.getParameter( "familyNameUS" ) == null ? "" : mRequest.getParameter( "familyNameUS" ).trim()
+        , genusNameKR = mRequest.getParameter( "genusNameKR" ) == null ? "" : mRequest.getParameter( "genusNameKR" ).trim()
+        , genusNameUS = mRequest.getParameter( "genusNameUS" ) == null ? "" : mRequest.getParameter( "genusNameUS" ).trim()
+        , koreaName = mRequest.getParameter( "koreaName" ) == null ? "" : mRequest.getParameter( "koreaName" ).trim()
+        , specificEpithet = mRequest.getParameter( "specificEpithet" ) == null ? "" : mRequest.getParameter( "specificEpithet" ).trim();
 
-for( int li = 0, limit = accessionNumbers.length; li < limit; ++li )
+// 과명, family
+if( !"".equals(familyNameKR) || !"".equals(familyNameUS) )
 {
-    int start = accessionNumbers[ li ][ 0 ], end = accessionNumbers[ li ][ 1 ];
+    sql += " AND ( family_nm = ? OR family_nm = ? ) ";
     
-    while( start <= end )
-        sb.append( con ).append( start++ ).append( " " );
+    params.add( familyNameKR );
+    params.add( familyNameUS );
+}
+// 속명, Genus
+if( !"".equals(genusNameKR) || !"".equals(genusNameUS) )
+{
+    sql += " AND ( genus_nm = ? OR genus_nm = ? )";
+    
+    params.add( genusNameKR );
+    params.add( genusNameUS );
+}
+// 국명
+if( !"".equals(koreaName) )
+{
+    sql += " AND korea_nm = ? ";
+    params.add( koreaName );
+}
+// 종소명
+if( specificEpithet != null && !"".equals(specificEpithet) )
+{
+    sql += " AND specific_epithet = ? ";
+    params.add( specificEpithet );
 }
 
-HttpClient httpClient = HttpClientBuilder.create().build();
-List< NameValuePair > params = new ArrayList< NameValuePair >();
+boolean isQuerySql = false;
+//종정보 and ( (유전자명 and 염기서열) or (유전자명 and 염기서열) or (유전자명 and 염기서열) ... )
+for( int li = 0, limit = 10; li < limit; ++li )
+{
+    String organism = mRequest.getParameter( "organism" + li ) == null ? "" : mRequest.getParameter( "organism" + li ).trim()
+            , query = mRequest.getParameter( "query" + li ) == null ? "" : mRequest.getParameter( "query" + li ).trim();
+    File queryFile = mRequest.getFile( "queryFile" + li );
+    
+    if( queryFile != null )
+    {
+        StringBuffer sb = new StringBuffer();
+        String tempStr = "";
+        BufferedReader br = new BufferedReader( new InputStreamReader(new FileInputStream(queryFile), "utf-8") );
+        
+        while( (tempStr = br.readLine()) != null )
+            sb.append( tempStr );
+        
+        query = sb.toString(); //업로드에 있는거 먼저..
+        br.close();
+    }
+    
+    if( organism != null && !"".equals(organism.trim()) && query != null && !"".equals(query.trim()) )
+    {
+        if( !isQuerySql ) // 처음이면
+        {
+            querySql += "( (organism LIKE ? OR organism_acronyms like ? ) AND origin like ? )";
+            isQuerySql = true;
+        }
+        else
+            querySql += " AND ( (organism LIKE ? OR organism_acronyms like ? ) AND origin like ? )";
+        
+        params.add( organism.trim() + "%" );
+        params.add( organism.trim() + "%" );
+        params.add( query.trim() + "%" );
+    }
+    else if( organism != null && !"".equals(organism.trim()) )
+    {
+        if( !isQuerySql ) // 처음이면
+        {
+            querySql += "( organism LIKE ? OR organism_acronyms like ? )";
+            isQuerySql = true;
+        }
+        else
+            querySql += " AND ( organism LIKE ? OR organism_acronyms like ? )";
+        
+        params.add( organism.trim() + "%" );
+        params.add( organism.trim() + "%" );
+    }
+    else if( query != null && !"".equals(query.trim()) )
+    {
+        if( !isQuerySql ) // 처음이면
+        {
+            querySql += "( origin LIKE ? )";
+            isQuerySql = true;
+        }
+        else
+            querySql += " AND ( origin LIKE ? )";
 
-params.add( new BasicNameValuePair("CMD", "Put") );
-params.add( new BasicNameValuePair("DATABASE", "nr") );
-params.add( new BasicNameValuePair("PROGRAM", "blastn") );
-params.add( new BasicNameValuePair("QUERY", sb.append(query).toString()) ); //"AGACGCCGCCGCCACCACCGCCACCGCCGC"
+        params.add( query.trim() + "%" );
+    }
+}
 
-HttpPost post = new HttpPost( url );
-String rid = "", data = "", status = "";
-
-post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
-post.setHeader( "Pragma", "no-cache" );
-post.setHeader( "Expires", "0" );
-post.setEntity( new UrlEncodedFormEntity(params) );
+if( isQuerySql ) sql +=  " AND ( " + querySql + " )";
 
 try
 {
-    data = httpClient.execute(post, new BasicResponseHandler() 
+    List< Map<String, Object> > list100 = new ArrayList< Map<String, Object> >()
+                                 , list = new ArrayList< Map<String, Object> >();
+    Map< String, Integer > assessionNumbers = new HashMap< String, Integer >(); // 중복제거를 위한 맵
+    int maxIdentity = 0, li = 1;
+    
+    pstm = conn.prepareStatement( sql );
+    //out.println( sql + "<br/>" );
+    for( String param : params )
     {
-        @Override
-        public String handleResponse(HttpResponse response)
-                throws HttpResponseException, IOException
-        {
-            return super.handleResponse( response );
-        }
-    });
-    Document doc = Jsoup.parse( data );
-    Element element = doc.getElementById( "rid" );
+        //out.println( param );
+        pstm.setString( li++, param );
+    }
     
-    rid = element != null ? element.val() : "";
-}
-catch ( IOException e )
-{
-    e.printStackTrace();
-}
-
-if( !"".equals(rid) )
-{
-    System.out.println( rid );
+    rs = pstm.executeQuery();
     
-    params = new ArrayList< NameValuePair >();
-    params.add( new BasicNameValuePair("CMD", "Get") );
-    params.add( new BasicNameValuePair("db", "nucleotide") );
-    params.add( new BasicNameValuePair("DATABASE", "nr") );
-    params.add( new BasicNameValuePair("PROGRAM", "blastn") );
-    params.add( new BasicNameValuePair("RID", rid) );
-    params.add( new BasicNameValuePair("SHOW_OVERVIEW", "no") );
-    params.add( new BasicNameValuePair("DESCRIPTIONS", "100") );
-    
-    post = new HttpPost( url );
-    post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
-    post.setHeader( "Pragma", "no-cache" );
-    post.setHeader( "Expires", "0" );
-    post.setEntity( new UrlEncodedFormEntity(params) );
-    
-    try
+    if( rs.next() )
     {
         do
         {
-            data = httpClient.execute(post, new BasicResponseHandler() 
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            List< NameValuePair > postParams = new ArrayList< NameValuePair >();
+            /**
+            ALIGNMENT_VIEW
+            0 - Pairwise
+            1 - master-slave with identities
+            2 - master-slave without identities
+            3 - flat master-slave with identities
+            4 - flat master-slave without identities
+            7 - BLAST XML
+            9 - Hit Table
+            /**/
+            postParams.add( new BasicNameValuePair("ALIGNMENT_VIEW", "7") );
+            postParams.add( new BasicNameValuePair("PROGRAM", "blastn") );
+            postParams.add( new BasicNameValuePair("DATALIB", "cbrur_db") );
+            postParams.add( new BasicNameValuePair("DESCRIPTIONS", "100") );
+            postParams.add( new BasicNameValuePair("ALIGNMENTS", "100") );
+            //postParams.add( new BasicNameValuePair("SEQUENCE", "AACTAAAGCAAGTGTTGGATTCAAAGCTGGGGTTAAAGATTACAAATTGACTTATTATACTCCTGACTATGAAACCAAAGATACTGATATCTTGGCAGCATTCCGAGTAACTCCTCAACCTGGAGTTCCACCTGAAGAAGCGGGAGCCGCGGTAGCTGCCGAATCTTCTACTGGTACATGGACCACTGTGTGGACCGATGGACTTACCAGCCTTGATCGTTACAAAGGGCGCTGCTACGGAATCGAGCCCGTTGCTGGAGAAGAAAATCAATTTATCGCTTATGTAGCTTACCCATTAGACCTTTTTGAAGAAGGTTCTGTTACTAACATGTTTACTTCTATTGTAGGTAATGTATTTGGGTTCAAAGCCCTGCGCGCTCTACGTCTGGAAGATCTGCGAATCCCCGTTGCTTATGTTAAAACTTTCCAAGGACCGCCTCATGGCATCCAAGTTGAGAGAGATAAATTGAACAAGTATGGTCGTCCCCTGTTGGGATGTACTATTAAACCTAAATTGGGATTATCCGCTAAAAAC") );
+            postParams.add( new BasicNameValuePair("SEQUENCE", rs.getString("origin")) );
+
+            HttpPost post = new HttpPost( url );
+
+            post.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
+            post.setHeader( "Pragma", "no-cache" );
+            post.setHeader( "Expires", "0" );
+            post.setEntity( new UrlEncodedFormEntity(postParams) );
+            
+            String data = "";
+            
+            try
             {
-                @Override
-                public String handleResponse(HttpResponse response)
-                        throws HttpResponseException, IOException
+                data = httpClient.execute(post, new BasicResponseHandler()
                 {
-                    return super.handleResponse( response );
+                    @Override
+                    public String handleResponse( HttpResponse response ) throws HttpResponseException, IOException
+                    {
+                        return super.handleResponse( response );
+                    }
+                });
+                //System.out.println( data );
+            }
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
+            
+            Document doc = Jsoup.parse( data );
+            Elements hitElements = doc.getElementsByTag("Hit");
+            
+            for( Element hit : hitElements )
+            {
+                Map< String, Object > m = new HashMap< String, Object >();
+                String[] vals = hit.getElementsByTag( "Hit_def" ).get( 0 ).text().split( "\\|" );// accession number|속명|종소명|구간명
+                String accessionNumber = vals[ 0 ].trim()
+                        , genusName = vals[ 1 ].trim()
+                        , specificEpithetName = vals[ 2 ].trim()
+                        , organismAcronyms = vals[ 3 ].trim()
+                        , hspIdentity = hit.getElementsByTag( "Hsp_identity" ).get( 0 ).text()
+                        , hspAlignLen = hit.getElementsByTag( "Hsp_align-len" ).get( 0 ).text();
+                int identity = Integer.parseInt(hspIdentity) * 100 / Integer.parseInt(hspAlignLen);
+                
+                if( assessionNumbers.containsKey(accessionNumber) ) continue; // 중복 제거
+                
+                assessionNumbers.put( accessionNumber, identity );
+                
+                PreparedStatement pstm2 = null;
+                ResultSet rs2 = null;
+                
+                try
+                {
+                    pstm2 = conn.prepareStatement( "select * from orchid where accession_num = ?" );
+                    pstm2.setString( 1, accessionNumber );
+                    rs2 = pstm2.executeQuery();
+                    
+                    if( rs2.next() )
+                    {
+                        m.put( "specificName", rs2.getString("specific_nm") );
+                        m.put( "koreaName", rs2.getString("korea_nm") );
+                    }
                 }
-            });
-            Element element = Jsoup.parse( data ).getElementById( "statInfo" );
-    
-            status = element != null ? element.attr( "class" ) : "";
-            Thread.sleep( 3000 );
+                catch( Exception e2 )
+                {
+                    e2.printStackTrace();
+                }
+                finally
+                {
+                    if(rs2 != null) try{ rs2.close(); }catch( SQLException se ){}
+                    if(pstm2 != null) try{ pstm2.close(); }catch( SQLException se ){}
+                }
+                
+                m.put( "accessionNumber", accessionNumber );
+                m.put( "genusName", genusName );
+                m.put( "specificEpithet", specificEpithetName );
+                m.put( "organismAcronyms", organismAcronyms );
+                m.put( "identity", identity );
+                
+                if( identity > 99 ) list100.add( m );
+                else if( identity > maxIdentity )
+                {
+                    maxIdentity = identity;
+                    list.add( m );
+                }
+            }
         }
-        while( "WAITING".equals(status) );
+        while( rs.next() ); // end while rs.next()
         
-        System.out.println( data );
+        if( list100.size() == 0 ) list100.add( 0, list.get(list.size() - 1) ); // 100% 가 없는 경우는 최대값만 가져온다.
+        
+        list = list100;
     }
-    catch ( IOException e )
-    {
-        e.printStackTrace();
-    }
-}
+    
+    String viewType = mRequest.getParameter( "view" ) == null ? "" : mRequest.getParameter( "view" ).trim();
 %>
 <%@ include file="/search/common/inc/headin.jsp" %>
-<body>
+<body<%= "multi".equals(viewType) ? " style=\"min-width: 953px !important;\"" : "" %>>
+<%
+if( !"multi".equals(viewType) )
+{
+%>
 <%@ include file="/search/common/inc/header.jsp" %>
 <div class="contents_box">
     <div class="content_box">
-        <div class="content_title">| 검색 결과 요약</div>
+        <div class="content_title">| 검색 결과</div>
+<%
+}
+%>
         <div class="content">
             <table id="summary">
+<!--                 <col width="100px"> -->
+<!--                 <col width="150px"> -->
                 <col width="">
-                <col width="45px">
-                <col width="45px">
-                <col width="50px">
-                <col width="50px">
-                <col width="50px">
+                <col width="150px">
+                <col width="140px">
                 <col width="100px">
-                <col width="50px">
+                <col width="100px">
+                <col width="60px">
                 <col width="70px">
-<%--
-- e-value
-    우연히 맞을 가능성 (낮을 수록 신뢰성 높음)
-    검색 database가 모두 random sequence라고 가정,
-    query sequence 매칭이 기대되는 database 내의 서열 개수를 의미
-    예) 1e-12 면 0에 가까운 수 → 정보의 높은 확률(유의성을 의미)
-
-- score
-    Similarity가 높고 sequence가 길수록 높아짐 (높을 수록 좋은 결과)
-
-- query cover.
-    우리가 던진 query가 매칭되는 database에서 커버되는 정도
-
-- max ident.
-    우리가 던진 query가 매칭된 strain에 대한 최대유사성
---%>
+                <col width="90px">
                 <thead>
                     <tr>
-                        <th>Description</th>
-                        <th>Max<br/>score</th>
-                        <th>Total<br/>score</th>
-                        <th>Query<br/>cover</th>
-                        <th>E<br/>value</th>
-                        <th>Ident</th>
-                        <th>Accenssion</th>
+                        <th>학명</th>
+                        <th>국명</th>
+                        <th>유전자/구간명</th>
+                        <th>identity</th>
+                        <th>Accession</th>
                         <th>DB</th>
                         <th>Detail</th>
+                        <th>Download</th>
                     </tr>
                 </thead>
                 <tbody>
 <%
-Document doc = Jsoup.parse( data );
-Elements rows = doc.select( "#dscTable tbody tr" );
-
-if( rows != null && rows.size() > 0 )
+if( list.size() > 0 )
 {
-    int rowNum = 1;
-    
-    for( Element row : rows )
+    for( Map< String, Object > m : list )
     {
-        Elements elements = row.getElementsByTag( "td" ); 
-        String seq = row.getElementById( "chk_" + rowNum ).val();
 %>
                     <tr>
-<!--                         <td><input type="checkbox"></td> -->
-                        <td class="tl"><a href="order.jsp?rid=<%= rid %>&seq=<%= seq %>"><%= elements.get(1).text() %></a></td>
-                        <td><%= elements.get(2).text() %></td>
-                        <td><%= elements.get(3).text() %></td>
-                        <td><%= elements.get(4).text() %></td>
-                        <td><%= elements.get(5).text() %></td>
-                        <td><%= elements.get(6).text() %></td>
-                        <td><%= elements.get(7).text() %></td>
+                        <td><%= m.get( "specificName" )  %></td>
+                        <td><%= m.get( "koreaName" ) %></td>
+<%--                         <td><%= m.get( "genusName" )  %></td> --%>
+<%--                         <td><%= m.get( "specificEpithet" ) %></td> --%>
+                        <td><%= m.get( "organismAcronyms" ) %></td>
+                        <td><%= m.get( "identity" ) %></td>
+                        <td><%= m.get( "accessionNumber" ) %></td>
                         <td>CBRUR</td>
-                        <td><a href="detail1.jsp?rid=<%= rid %>&seq=<%= seq %>" class="btn_s btn_pe01">View</a></td>
+                        <td><a href="detail1.jsp?accessionNumber=<%= m.get( "accessionNumber" ) %>" class="btn_s btn_pe01">View</a></td>
+                        <td><a href="download.jsp?accessionNumber=<%= m.get( "accessionNumber" ) %>" class="btn_s btn_pe01">Save</a></td>
                     </tr>
 <%
-        ++rowNum;
     }
 }
 else
 {
 %>
                     <tr>
-                        <td colspan="9">검색 결과가 없습니다.</td>
+                        <td colspan="8">검색 결과가 없습니다.</td>
                     </tr>
 <%
 }
@@ -204,16 +327,36 @@ else
                 </tbody>
             </table>
         </div>
+<%
+if( !"multi".equals(viewType) )
+{
+%>
     </div>
+</div>
+<%@ include file="/search/common/inc/footer.jsp" %>
+<%
+}
+%>
 <script>
 $( document ).ready(function(){
     $( "#summary a" ).click(function( e ){
-        window.open( this.href, "detail", "width=800px,height=600px,scrollbars=yes" );
+        window.open( this.href, "detail", "width=1100px,height=600px,scrollbars=yes" );
         e.preventDefault();
     });
 });
 </script>
-</div>
-<%@ include file="/search/common/inc/footer.jsp" %>
 </body>
 </html>
+<%
+}
+catch( Exception e )
+{
+    e.printStackTrace();
+}
+finally
+{
+    if(rs != null) try{ rs.close(); }catch( SQLException se ){}
+    if(pstm != null) try{ pstm.close(); }catch( SQLException se ){}
+    if(conn != null) try{ conn.close(); }catch( SQLException se ){}
+}
+%>

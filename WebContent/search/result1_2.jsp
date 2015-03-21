@@ -1,4 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
+        import="java.util.*" %>
 <%@ include file="/search/openDB.jsp" %>
 <%@ include file="/search/commonResult.jsp" %>
 <%@ include file="/search/common/inc/headin.jsp" %>
@@ -27,94 +28,91 @@
                 </thead>
                 <tbody>
 <%
-String sql = "select * from orchid where 1 = 1";
-//String sql = "select * from orchid limit 0, 15";
-String geneOrSection = request.getParameter( "geneOrSection" )
-        , familyNameKR = request.getParameter( "familyNameKR" )
-        , familyNameUS = request.getParameter( "familyNameUS" )
-        , genusNameKR = request.getParameter( "genusNameKR" )
-        , genusNameUS = request.getParameter( "genusNameUS" )
-        , koreaName = request.getParameter( "koreaName" )
-        , specificName = request.getParameter( "specificName" );
+List< String > params = new ArrayList< String >();
+String sql = "select * from orchid where 1 = 1"
+        , organism = mRequest.getParameter( "organism" ).trim()
+        , familyNameKR = mRequest.getParameter( "familyNameKR" ).trim()
+        , familyNameUS = mRequest.getParameter( "familyNameUS" ).trim()
+        , genusNameKR = mRequest.getParameter( "genusNameKR" ).trim()
+        , genusNameUS = mRequest.getParameter( "genusNameUS" ).trim()
+        , koreaName = mRequest.getParameter( "koreaName" ).trim()
+        , specificEpithet = mRequest.getParameter( "specificEpithet" ).trim();
 
-//유전자 / 구간명
-if( geneOrSection != null && !"".equals(geneOrSection) )
+//과명, family
+if( !"".equals(familyNameKR) || !"".equals(familyNameUS) )
 {
-    geneOrSection = geneOrSection.trim();
-    sql += " AND ( 유전자명 = ? or 구간명 = ? )";
+    sql += " AND ( family_nm = ? OR family_nm = ? ) ";
+ 
+    params.add( familyNameKR );
+    params.add( familyNameUS );
 }
-else
+//속명, Genus
+if( !"".equals(genusNameKR) || !"".equals(genusNameUS) )
 {
-    // 과명, family
-    if( familyNameKR != null || familyNameUS != null )
-    {
-        sql += " AND (";
-        
-        if( familyNameKR != null && !"".equals(familyNameKR) )
-        {
-            familyNameKR = familyNameKR.trim();
-            sql += " family_nm = ? ";
-        }
-        
-        if( familyNameUS != null && !"".equals(familyNameUS) )
-        {
-            familyNameUS = familyNameUS.trim();
-            sql += " OR family_nm = ? ";
-        }
-        
-        sql += " )";
-    }
-    // 속명, Genus
-    if( genusNameKR != null || genusNameUS != null )
-    {
-        sql += " AND (";
-        
-        if( genusNameKR != null && !"".equals(genusNameKR) )
-        {
-            genusNameKR = genusNameKR.trim();
-            sql += " genus_nm = ? ";
-        }
-        
-        if( genusNameUS != null && !"".equals(genusNameUS) )
-        {
-            genusNameUS = genusNameUS.trim();
-            sql += " OR genus_nm = ? ";
-        }
-        
-        sql += " )";
-    }
+    sql += " AND ( genus_nm = ? OR genus_nm = ? )";
+ 
+    params.add( genusNameKR );
+    params.add( genusNameUS );
 }
+// 국명
+if( !"".equals(koreaName) )
+{
+    sql += " AND korea_nm = ? ";
+    params.add( koreaName );
+}
+// 종소명
+if( specificEpithet != null && !"".equals(specificEpithet) )
+{
+    sql += " AND specific_epithet = ? ";
+    params.add( specificEpithet );
+}
+
+ // 염기서열
+if( !"".equals(organism) )
+{
+    sql += " AND ( organism like ? OR organism_acronyms like ? )";
+    params.add( organism + "%" );
+    params.add( organism + "%" );
+}
+
 try
 {
+    //out.println( sql );
     pstm = conn.prepareStatement( sql );
-    //pstm.setString( 1, "%" + query + "%" );
+
+    int li = 1;
+    
+    for( String param : params )
+        pstm.setString( li++, param );
+
     rs = pstm.executeQuery();
 
-    if( rs != null )
+    if( rs.next() )
     {
         int rowNum = 1;
         
-        while( rs.next() )
-        { 
-            int seq = rs.getInt( "seq" );
+        do
+        {
+            String accessionNumber = rs.getString( "accession_num" );
 %>
                     <tr>
                         <td class="tl"><%= rs.getString( "specific_nm" ) %></td>
                         <td><%= rs.getString( "organism" ) %></td>
-                        <td><%= rs.getString( "accession_num" ) %></td>
-                        <td>CBRUR DB</td>
-                        <td><a href="detail1.jsp?seq=<%= seq %>" class="btn_s btn_pe01">View</a></td>
-                        <td><a href="detail1.jsp?seq=<%= seq %>" class="btn_s btn_pe01">Save</a></td>
+                        <td><%= accessionNumber %></td>
+                        <td>CBRUR</td>
+                        <td><a href="detail1.jsp?accessionNumber=<%= accessionNumber %>" class="btn_s btn_pe01">View</a></td>
+                        <td><a href="download.jsp?accessionNumber=<%= accessionNumber %>" class="btn_s btn_pe01">Save</a></td>
                     </tr>
 <%
             ++rowNum;
         }
+        while( rs.next() );
     }
     else
     {
 %>
                     <tr>
-                        <td colspan="9">검색 결과가 없습니다.</td>
+                        <td colspan="6">검색 결과가 없습니다.</td>
                     </tr>
 <%
     }
@@ -137,7 +135,7 @@ finally
 <script>
 $( document ).ready(function(){
     $( "#summary a" ).click(function( e ){
-        window.open( this.href, "detail", "width=800px,height=600px,scrollbars=yes" );
+        window.open( this.href, "detail", "width=1100px,height=600px,scrollbars=yes" );
         e.preventDefault();
     });
 });

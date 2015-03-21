@@ -66,7 +66,6 @@ catch (Exception e)
 %>
 <%@ include file="/search/common/inc/headin.jsp" %>
 <body>
-<%@ include file="/search/common/inc/header.jsp" %>
 <div class="popup" id="popup" style="display:block;">
     <div class="popup_box">
 <!--         <div class="btn_close" onClick="$('#popup').toggle()">X</div> -->

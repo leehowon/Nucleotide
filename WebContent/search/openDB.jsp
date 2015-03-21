@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
-        import="java.sql.*" %>
-<%
+        import="java.sql.*" %><%
 Connection conn = null;
 PreparedStatement pstm = null;
 ResultSet rs = null;

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
-<title>DNA Barcode  기반 종 동정 프로그램</title>
+<title>DNA 바코드 종 동정 시스템</title>
 <link href="/search/common/ui/style.css" rel="stylesheet" type="text/css" id="css">
 <link href="/search/common/ui/loading.css" rel="stylesheet" type="text/css">
 <link rel="shortcut icon" href="/search/common/ui/img/favicon.ico" type="image/x-icon">

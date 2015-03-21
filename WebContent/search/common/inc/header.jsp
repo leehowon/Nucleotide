@@ -3,7 +3,7 @@
 <!-- header -->
 <div class="header">
 	<div class="wd tc">
-			<h1> <img src="common/ui/img/dna_icon.png"> DNA Barcode  기반 종 동정 프로그램</h1>
+			<h1> <img src="common/ui/img/dna_icon.png">DNA 바코드 종 동정 시스템</h1>
 	</div>
 </div>
 <div class="sub_header">

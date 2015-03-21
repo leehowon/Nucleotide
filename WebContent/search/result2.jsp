@@ -19,6 +19,34 @@
                 , org.jsoup.select.Elements" %>
 <%@ include file="commonResult.jsp" %>
 <%
+String url = "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi"
+        , query = mRequest.getParameter( "query" ).trim();
+        File queryFile = mRequest.getFile( "queryFile" );
+
+if( "".equals(query) && queryFile == null )
+{
+%>
+<html>
+<head><script>alert( "필수 파라미터가 없습니다." );history.back(-1);</script></head>
+<body></body>
+</html>
+<%
+return;
+}
+
+if( queryFile != null )
+{
+    StringBuffer sb = new StringBuffer();
+    String tempStr = "";
+    BufferedReader br = new BufferedReader( new InputStreamReader(new FileInputStream(queryFile), "utf-8") );
+    
+    while( (tempStr = br.readLine()) != null )
+        sb.append( tempStr );
+    
+    query = sb.toString(); //업로드에 있는거 먼저..
+    br.close();
+}
+
 HttpClient httpClient = HttpClientBuilder.create().build();
 List< NameValuePair > params = new ArrayList< NameValuePair >();
 
@@ -102,13 +130,22 @@ if( !"".equals(rid) )
         e.printStackTrace();
     }
 }
+
+String viewType = mRequest.getParameter( "view" ) == null ? "" : mRequest.getParameter( "view" ).trim();
 %>
 <%@ include file="/search/common/inc/headin.jsp" %>
-<body>
+<body<%= "multi".equals(viewType) ? " style=\"min-width: 953px !important;\"" : "" %>>
+<%
+if( !"multi".equals(viewType) )
+{
+%>
 <%@ include file="/search/common/inc/header.jsp" %>
 <div class="contents_box">
     <div class="content_box">
         <div class="content_title">| 검색 결과 요약</div>
+<%
+}
+%>
         <div class="content">
             <table id="summary">
                 <col width="">
@@ -120,22 +157,6 @@ if( !"".equals(rid) )
                 <col width="100px">
                 <col width="50px">
                 <col width="70px">
-<%--
-- e-value
-    우연히 맞을 가능성 (낮을 수록 신뢰성 높음)
-    검색 database가 모두 random sequence라고 가정,
-    query sequence 매칭이 기대되는 database 내의 서열 개수를 의미
-    예) 1e-12 면 0에 가까운 수 → 정보의 높은 확률(유의성을 의미)
-
-- score
-    Similarity가 높고 sequence가 길수록 높아짐 (높을 수록 좋은 결과)
-
-- query cover.
-    우리가 던진 query가 매칭되는 database에서 커버되는 정도
-
-- max ident.
-    우리가 던진 query가 매칭된 strain에 대한 최대유사성
---%>
                 <thead>
                     <tr>
                         <th>Description</th>
@@ -191,16 +212,23 @@ else
                 </tbody>
             </table>
         </div>
+<%
+if( !"multi".equals(viewType) )
+{
+%>
     </div>
+</div>
+<%@ include file="/search/common/inc/footer.jsp" %>
+<%
+}
+%>
 <script>
 $( document ).ready(function(){
     $( "#summary a" ).click(function( e ){
-        window.open( this.href, "detail", "width=800px,height=600px,scrollbars=yes" );
+        window.open( this.href, "detail", "width=1100px,height=600px,scrollbars=yes" );
         e.preventDefault();
     });
 });
 </script>
-</div>
-<%@ include file="/search/common/inc/footer.jsp" %>
 </body>
 </html>

@@ -1,29 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8"
-        import="java.io.IOException
-                , java.util.ArrayList
-                , java.util.Iterator
-                , java.util.List
-                , org.apache.http.HttpResponse
-                , org.apache.http.NameValuePair
-                , org.apache.http.client.ClientProtocolException
-                , org.apache.http.client.HttpClient
-                , org.apache.http.client.HttpResponseException
-                , org.apache.http.client.entity.UrlEncodedFormEntity
-                , org.apache.http.client.methods.HttpGet
-                , org.apache.http.client.methods.HttpPost
-                , org.apache.http.impl.client.BasicResponseHandler
-                , org.apache.http.impl.client.HttpClientBuilder
-                , org.apache.http.message.BasicNameValuePair
-                , org.jsoup.Jsoup
-                , org.jsoup.nodes.Document
-                , org.jsoup.nodes.Element
-                , org.jsoup.select.Elements" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="UTF-8" %>
+<%@ include file="/search/openDB.jsp" %>
 <%
-String seq = request.getParameter( "seq" )
-        , rid = request.getParameter( "rid" );
+String accessionNumber = request.getParameter( "accessionNumber" );
 
-//if( seq == null || "".equals(seq) || rid == null || "".equals(rid) )
-    if( seq == null || "".equals(seq) )
+if( accessionNumber == null || "".equals(accessionNumber) )
 {
 %>
 <html>
@@ -33,52 +13,123 @@ String seq = request.getParameter( "seq" )
 <%
     return;
 }
-//String url = "http://www.ncbi.nlm.nih.gov/nucleotide/" + seq + "?report=genbank&RID=" + rid;
-String url = "http://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?val=" + seq;
-HttpClient httpClient = HttpClientBuilder.create().build();
-HttpGet get = new HttpGet( url );
-
-get.setHeader( "Cache-Control", "no-cache, no-store, must-revalidate" );
-get.setHeader( "Pragma", "no-cache" );
-get.setHeader( "Expires", "0" );
-
-Document doc = null;
+%>
+<%@ include file="/search/common/inc/headin.jsp" %>
+<body>
+<div class="popup" id="popup" style="display:block;">
+    <div class="popup_box">
+<%
+String sql = "select * from orchid where accession_num = ?";
 
 try
 {
-    String data = httpClient.execute(get, new BasicResponseHandler() 
-    {
-        @Override
-        public String handleResponse(HttpResponse response)
-                throws HttpResponseException, IOException
-        {
-            return super.handleResponse( response );
-        }
-    });
+    pstm = conn.prepareStatement( sql );
+    pstm.setString( 1, accessionNumber );
+    rs = pstm.executeQuery();
     
-    doc = Jsoup.parse( data );
+    if( !rs.next() )
+    {
+%>
+<html>
+<head><script>alert( "상세 내역이 없습니다." );window.close();</script></head>
+<body></body>
+</html>
+<%
+        return;
+    }
+
+    String orgin = rs.getString( "origin" );
+    StringBuffer sb = new StringBuffer();
+    
+    if( orgin != null && !"".equals(orgin) )
+    {
+        int li = 0, wordLen = 10, seqLen = orgin.length(), limit = ( int ) Math.ceil( seqLen / ( float ) wordLen )
+            , startIndex = 0, endIndex = 0
+            , digit = String.valueOf( seqLen ).length();
+        
+        for( ; li < limit; ++li )
+        {
+            endIndex = startIndex + 10;
+            
+            if( endIndex > seqLen ) endIndex = seqLen;
+            
+            if( li % 6 == 0 )
+            {
+                if( li != 0 ) sb.append( "\n" );
+                sb.append( String.format("%" + digit + "s", startIndex + 1) ).append( " " );
+            }
+            
+            sb.append( orgin.substring(startIndex, endIndex) );
+            startIndex = endIndex;
+            
+            if( (li + 1) < limit ) sb.append( " " );
+        }
+    }
+%>
+        <div class="title"><%= rs.getString( "organism" ) %></div>
+        <div class="content">
+            <table>
+                <col width="80px">
+                <col width="600px">
+                    <tr>
+                        <th>국명</th>
+                        <td><%= rs.getString( "korea_nm" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>학명</th>
+                        <td><%= rs.getString( "specific_nm" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>채집장소</th>
+                        <td><%= rs.getString( "locus" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>채집일</th>
+                        <td><%= rs.getString( "collection" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>채집자</th>
+                        <td><%= rs.getString( "authors" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>채집번호</th>
+                        <td><%= rs.getString( "accession_num" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>유전자</th>
+                        <td><%= rs.getString( "organism" ) %></td>
+                    </tr>
+                    <tr>
+                        <th>염기서열</th>
+                        <td>
+                        <pre><%= sb.toString() %></pre>
+                        </td>
+                    </tr>
+                </table>
+        </div>
+<%
 }
-catch (Exception e)
+catch( Exception e )
 {
     e.printStackTrace();
     return;
 }
+finally
+{
+    if(rs != null) try{ rs.close(); }catch( SQLException se ){}
+    if(pstm != null) try{ pstm.close(); }catch( SQLException se ){}
+    if(conn != null) try{ conn.close(); }catch( SQLException se ){}
+}
 %>
-<%@ include file="/search/common/inc/headin.jsp" %>
-<body>
-<%@ include file="/search/common/inc/header.jsp" %>
-<div class="popup" id="popup" style="display:block;">
-    <div class="popup_box">
-<!--         <div class="btn_close" onClick="$('#popup').toggle()">X</div> -->
-        <div class="title"><%= doc.select( "p.title > a" ).get( 0 ).text() %></div>
-        <div class="content">
-            <pre>채집장소 
-채집일 
-채집자 
-채집번호 </pre>
-            <pre><%= doc.select( "pre" ).get( 0 ).text() %></pre>
-        </div>
     </div>
 </div>
+<script>
+$( document ).ready(function(){
+    $( "#summary a" ).click(function( e ){
+        window.open( this.href, "detail", "width=800px,height=600px,scrollbars=yes" );
+        e.preventDefault();
+    });
+});
+</script>
 </body>
 </html>
